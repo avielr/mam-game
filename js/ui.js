@@ -99,15 +99,16 @@ export function shuffle(arr) {
   return a;
 }
 
-// Commander avatar (תא״ל ביט) — friendly robot.
+// Commander avatar (תא״ל ביט) — an AI commander: visor helmet inside a rotating scanner ring.
 export function commanderFace() {
   return svgEl(`<svg class="face" viewBox="0 0 80 80" aria-hidden="true">
-    <rect x="10" y="18" width="60" height="50" rx="16" fill="#22d3a6"/>
-    <rect x="18" y="28" width="44" height="26" rx="10" fill="#0b1530"/>
-    <circle cx="31" cy="41" r="5" fill="#7ff5d6"/><circle cx="49" cy="41" r="5" fill="#7ff5d6"/>
-    <path d="M32 60q8 5 16 0" stroke="#0b1530" stroke-width="3" fill="none" stroke-linecap="round"/>
-    <line x1="40" y1="18" x2="40" y2="8" stroke="#22d3a6" stroke-width="3"/><circle cx="40" cy="7" r="4" fill="#ffb547"/>
-    <rect x="12" y="14" width="56" height="9" rx="4" fill="#3c5a2a"/><circle cx="40" cy="18" r="3" fill="#ffd166"/>
+    <defs><linearGradient id="cf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2a4a"/><stop offset="1" stop-color="#0c1428"/></linearGradient></defs>
+    <circle cx="40" cy="40" r="38" fill="url(#cf)" stroke="#26365c" stroke-width="1.5"/>
+    <circle class="cf-ring" cx="40" cy="40" r="33" fill="none" stroke="#3ee0c4" stroke-width="1.5" stroke-dasharray="14 9" opacity=".7"/>
+    <path d="M22 44c0-12 8-21 18-21s18 9 18 21v6c0 3-2 5-5 5H27c-3 0-5-2-5-5z" fill="#1e2c4d" stroke="#3a4d78" stroke-width="1.5"/>
+    <path d="M26 40h28c1.5 0 2.5 1 2.5 2.5v2c0 1.5-1 2.5-2.5 2.5H26c-1.5 0-2.5-1-2.5-2.5v-2c0-1.5 1-2.5 2.5-2.5z" fill="#071022" stroke="#3ee0c4" stroke-width="1.2"/>
+    <rect class="cf-eye" x="30" y="42.6" width="20" height="1.8" rx=".9" fill="#3ee0c4"/>
+    <path d="M34 28l6-3l6 3" fill="none" stroke="#f5c451" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`);
 }
 

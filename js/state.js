@@ -4,7 +4,9 @@ const KEY = 'mamram.v1';
 const fresh = () => ({
   version: 1,
   agentName: '',
-  avatar: '🦊',
+  avatar: 'scan-face',
+  lang: 'he',
+  narration: true,
   xp: 0,
   sound: true,
   missions: {},        // id -> { stars, bestScore, attempts, timeSec, firstDoneAt, lastAt }

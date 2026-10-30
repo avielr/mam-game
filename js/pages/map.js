@@ -1,12 +1,14 @@
 import { h, mount } from '../ui.js';
 import { getState, rankFor, isDone } from '../state.js';
-import { RANKS } from '../content/meta.js';
-import { BASES } from '../content/index.js';
-import { topbar } from './common.js';
+import { RANKS, tr } from '../content/meta.js';
+import { bases } from '../content/index.js';
+import { L } from '../i18n.js';
+import { icon, insignia } from '../icons.js';
+import { topbar, avatarIcon } from './common.js';
 
 export function baseUnlocked(idx) {
   if (idx === 0) return true;
-  const prev = BASES[idx - 1];
+  const prev = bases()[idx - 1];
   return !prev.soon && prev.missions.length > 0 && isDone(prev.missions[prev.missions.length - 1].id);
 }
 
@@ -18,14 +20,15 @@ export function render(app) {
   const st = getState();
   const rank = rankFor(st.xp, RANKS);
   const hero = h('section', { class: 'hero' },
-    h('div', { class: 'avatar' }, st.avatar),
-    h('div', { style: { flex: 1 } },
-      h('h1', { style: { margin: 0, fontSize: '23px' } }, `${rank.name} ${st.agentName}`),
-      h('div', { class: 'muted', style: { fontSize: '15px', marginBottom: '6px' } },
-        rank.next ? `עוד ${rank.next.xp - st.xp} XP לדרגת ${rank.next.name} ${rank.next.icon}` : 'הגעת לדרגה הגבוהה ביותר!'),
+    h('div', { class: 'avatar' }, avatarIcon(38)),
+    h('div', { style: { flex: 1, minWidth: 0 } },
+      h('div', { class: 'kicker' }, insignia(rank.index, 18), tr(rank.name)),
+      h('h1', { style: { margin: '2px 0 4px', fontSize: '24px' } }, st.agentName),
+      h('div', { class: 'muted', style: { fontSize: '14px', marginBottom: '6px' } },
+        rank.next ? L(`עוד ${rank.next.xp - st.xp} XP לדרגת ${tr(rank.next.name)}`, `${rank.next.xp - st.xp} XP to ${tr(rank.next.name)}`) : L('הגעת לדרגה הגבוהה ביותר!', 'Top rank reached!')),
       h('div', { class: 'xpbar' }, h('i', { style: { width: Math.round(rank.pct * 100) + '%' } }))));
 
-  const bases = BASES.map((b, bi) => {
+  const sections = bases().map((b, bi) => {
     const open = baseUnlocked(bi) && !b.soon;
     const doneCount = b.missions.filter(m => isDone(m.id)).length;
     let currentMarked = false;
@@ -39,19 +42,18 @@ export function render(app) {
         class: `node ${done ? 'done' : ''} ${current ? 'current' : ''} ${unlocked ? '' : 'locked'} ${m.boss ? 'boss' : ''}`,
         href: unlocked ? `#/mission/${m.id}` : undefined, 'aria-disabled': unlocked ? undefined : 'true',
       },
-        h('div', { class: 'dot' }, unlocked ? m.emoji : '🔒'),
-        h('div', { style: { flex: 1 } }, h('div', { class: 't' }, m.title), h('div', { class: 's' }, m.topic)),
-        done ? h('span', { class: 'stars' }, '★'.repeat(stars) + '☆'.repeat(3 - stars)) : current ? h('span', { class: 'chip' }, 'שחק ▶') : null);
+        h('div', { class: 'dot' }, icon(unlocked ? m.emoji : 'lock', 22)),
+        h('div', { style: { flex: 1, minWidth: 0 } }, h('div', { class: 't' }, m.title), h('div', { class: 's' }, m.topic)),
+        done ? h('span', { class: 'stars' }, [0, 1, 2].map(i => icon('star', 15, i < stars ? 'star-on' : 'star-off')))
+          : current ? h('span', { class: 'chip play' }, L('שחק', 'Play'), icon('play', 14)) : null);
     });
-    return h('section', { class: `base ${open ? '' : 'locked'}`, style: { borderColor: b.color + '88' } },
+    return h('section', { class: `base ${open ? '' : 'locked'}`, style: `--base:${b.color}` },
       h('div', { class: 'base-head' },
-        h('div', { class: 'emblem', style: { background: b.color + '33' } }, b.emblem),
-        h('div', { style: { flex: 1 } }, h('h2', {}, `בסיס ${b.id}: ${b.title}`), h('div', { class: 'sub' }, b.subtitle)),
-        b.soon ? h('span', { class: 'chip' }, '🚧 בקרוב') : h('span', { class: 'chip' }, `${doneCount}/${b.missions.length}`)),
-      b.soon
-        ? h('p', { class: 'muted', style: { margin: 0 } }, 'המפקד מכין את המשימות של הבסיס הזה. סיים את הבסיס הקודם, והוא ייפתח!')
-        : h('div', { class: 'path' }, nodes));
+        h('div', { class: 'emblem' }, icon(b.emblem, 30)),
+        h('div', { style: { flex: 1, minWidth: 0 } }, h('div', { class: 'kicker' }, L(`בסיס ${b.id}`, `Base ${b.id}`)), h('h2', {}, b.title), h('div', { class: 'sub' }, b.subtitle)),
+        h('span', { class: 'chip' }, open ? h('bdi', {}, `${doneCount}/${b.missions.length}`) : icon('lock', 16))),
+      h('div', { class: 'path' }, nodes));
   });
 
-  mount(app, topbar(), hero, ...bases);
+  mount(app, topbar(), hero, ...sections);
 }

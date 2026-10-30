@@ -1,5 +1,7 @@
 // Tap-to-sort: one card at a time, choose the right bin.
 import { h, mount, rich, shuffle, sound, shake } from '../ui.js';
+import { L } from '../i18n.js';
+import { icon } from '../icons.js';
 
 export function run(root, cfg, done) {
   const items = shuffle(cfg.items);
@@ -13,7 +15,7 @@ export function run(root, cfg, done) {
     const bins = h('div', { class: 'bins', style: cfg.bins.length > 2 ? { gridTemplateColumns: '1fr 1fr' } : {} },
       cfg.bins.map(b => h('button', { class: 'bin', onclick: () => pick(b.id, card, bins, fb) }, `${b.emoji} ${b.label}`)));
     mount(root,
-      h('div', { class: 'row', style: { marginBottom: '10px' } }, h('span', { class: 'muted' }, `${i + 1} / ${items.length}`), h('span', { class: 'spacer' }), h('span', { class: 'chip' }, `✅ ${correct}`)),
+      h('div', { class: 'row', style: { marginBottom: '10px' } }, h('span', { class: 'muted' }, `${i + 1} / ${items.length}`), h('span', { class: 'spacer' }), h('span', { class: 'chip' }, icon('circle-check', 14), ` ${correct}`)),
       card, bins, fb);
   }
 
@@ -24,8 +26,8 @@ export function run(root, cfg, done) {
     const right = cfg.bins.find(b => b.id === it.bin);
     if (ok) { correct++; sound('good'); } else { sound('bad'); shake(card); }
     mount(fb, h('div', { class: `feedback ${ok ? 'good' : 'bad'}` },
-      h('b', {}, ok ? 'נכון! ' : `לא בדיוק. התשובה: ${right.emoji} ${right.label}. `), rich(it.why || ''),
-      h('div', { class: 'row end', style: { marginTop: '10px' } }, h('button', { class: 'btn small', onclick: () => { i++; show(); } }, 'הבא ←'))));
+      h('b', {}, ok ? L('נכון! ', 'Correct! ') : L(`לא בדיוק. התשובה: ${right.emoji} ${right.label}. `, `Not quite. The answer: ${right.emoji} ${right.label}. `)), rich(it.why || ''),
+      h('div', { class: 'row end', style: { marginTop: '10px' } }, h('button', { class: 'btn small', onclick: () => { i++; show(); } }, L('הבא ←', 'Next →')))));
   }
 
   show();

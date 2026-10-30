@@ -1,5 +1,7 @@
 // Packet router: tap connected stations to move a packet to the right IP.
 import { h, mount, rich, sound, shake } from '../ui.js';
+import { L } from '../i18n.js';
+import { icon } from '../icons.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const s = (tag, attrs = {}, text) => {
@@ -21,8 +23,8 @@ export function run(root, cfg, done) {
 
   function level() {
     if (li >= cfg.levels.length) return done(Math.max(0, cfg.levels.length / (cfg.levels.length + mistakes * 0.4)));
-    const L = cfg.levels[li];
-    let cur = start, prev = [], routing = !L.secure, busy = false;
+    const lv = cfg.levels[li];
+    let cur = start, prev = [], routing = !lv.secure, busy = false;
     const fb = h('div');
     const msg = (text, good) => mount(fb, h('div', { class: `feedback ${good ? 'good' : 'bad'}` }, rich(text)));
 
@@ -66,43 +68,46 @@ export function run(root, cfg, done) {
       if (!routing || busy || id === cur) return;
       if (!adj[cur]?.includes(id)) {
         mistakes++; sound('bad'); shake(wrap);
-        return msg(`אין חיבור ישיר בין **${byId[cur].label}** ל**${byId[id].label}**. תלך רק לתחנות שמחוברות בקו.`);
+        return msg(L(`אין חיבור ישיר בין **${byId[cur].label}** ל**${byId[id].label}**. תלך רק לתחנות שמחוברות בקו.`,
+          `There's no direct link between **${byId[cur].label}** and **${byId[id].label}**. Only move to stations connected by a line.`));
       }
       prev.push(cur); cur = id; sound('click'); paint();
       const n = byId[id];
-      if (L.avoid && id === L.avoid) {
+      if (lv.avoid && id === lv.avoid) {
         mistakes++; sound('bad');
         busy = true;
         setTimeout(() => { cur = start; prev = []; busy = false; paint(); }, 600);
-        return msg('🚨 החבילה נכנסה לשרת ההאקרים! הם גנבו אותה. חוזרים להתחלה, ובוחרים דרך אחרת.');
+        return msg(L('החבילה נכנסה לשרת ההאקרים! הם גנבו אותה. חוזרים להתחלה, ובוחרים דרך אחרת.',
+          'The packet went into the hackers\' server! They stole it. Back to the start, pick another route.'));
       }
-      if (id === L.to) {
+      if (id === lv.to) {
         routing = false; sound('good'); paint();
-        return mount(fb, h('div', { class: 'feedback good' }, h('b', {}, '📬 החבילה הגיעה! '),
-          rich(`המסלול: ${[...prev, cur].map(x => byId[x].label).join(' ← ')}`),
-          h('div', { class: 'row end', style: { marginTop: '10px' } }, h('button', { class: 'btn small', onclick: () => { li++; level(); } }, 'הבא ←'))));
+        return mount(fb, h('div', { class: 'feedback good' }, h('b', {}, L('החבילה הגיעה! ', 'Packet delivered! ')),
+          rich(L(`המסלול: ${[...prev, cur].map(x => byId[x].label).join(' ← ')}`, `Route: ${[...prev, cur].map(x => byId[x].label).join(' → ')}`)),
+          h('div', { class: 'row end', style: { marginTop: '10px' } }, h('button', { class: 'btn small', onclick: () => { li++; level(); } }, L('הבא ←', 'Next →')))));
       }
       if ((adj[id] || []).length === 1) {
         mistakes++; sound('bad');
         busy = true;
         setTimeout(() => { cur = prev.pop(); busy = false; paint(); }, 600);
-        return msg(`זה **${n.label}** עם הכתובת \`${n.ip}\`. זה לא היעד. החבילה חוזרת אחורה.`);
+        return msg(L(`זה **${n.label}** עם הכתובת \`${n.ip}\`. זה לא היעד. החבילה חוזרת אחורה.`,
+          `That's **${n.label}** at address \`${n.ip}\`. Not the destination. The packet goes back.`));
       }
       mount(fb);
     }
 
     const wrap = h('div', { class: 'net-wrap' }, svg);
-    const top = [h('div', { class: 'mission-box' }, h('b', {}, `🎯 משימה ${li + 1}/${cfg.levels.length}: `), rich(L.text))];
-    if (L.dns) {
-      top.push(h('div', { class: 'mission-box' }, h('b', {}, '📒 ספר DNS'),
-        h('table', {}, Object.entries(L.dns).map(([k, v]) => h('tr', {}, h('td', { class: 'ltr mono' }, k), h('td', { class: 'ltr mono', style: { color: '#22d3a6' } }, v))))));
+    const top = [h('div', { class: 'mission-box' }, h('b', {}, L(`משימה ${li + 1}/${cfg.levels.length}: `, `Mission ${li + 1}/${cfg.levels.length}: `)), rich(lv.text))];
+    if (lv.dns) {
+      top.push(h('div', { class: 'mission-box' }, h('b', {}, icon('book-open', 16), ' ', L('ספר DNS', 'DNS book')),
+        h('table', {}, Object.entries(lv.dns).map(([k, v]) => h('tr', {}, h('td', { class: 'ltr mono' }, k), h('td', { class: 'ltr mono', style: { color: '#22d3a6' } }, v))))));
     }
     const secureBox = h('div');
-    if (L.secure) {
-      mount(secureBox, h('div', { class: 'mission-box' }, h('b', {}, 'איך שולחים את החבילה?'),
+    if (lv.secure) {
+      mount(secureBox, h('div', { class: 'mission-box' }, h('b', {}, L('איך שולחים את החבילה?', 'How do we send the packet?')),
         h('div', { class: 'row', style: { marginTop: '8px' } },
-          h('button', { class: 'btn secondary small', onclick: () => { mistakes++; sound('bad'); msg('ב-HTTP המידע עובר **גלוי**, וכל מי שבדרך יכול לקרוא אותו! נסה שוב.'); } }, '✉️ HTTP'),
-          h('button', { class: 'btn small', onclick: () => { routing = true; sound('good'); mount(secureBox, h('div', { class: 'feedback good' }, '🔒 מעולה! החבילה מוצפנת. עכשיו נתב אותה.')); paint(); mount(fb); } }, '🔒 HTTPS'))));
+          h('button', { class: 'btn secondary small', onclick: () => { mistakes++; sound('bad'); msg(L('ב-HTTP המידע עובר **גלוי**, וכל מי שבדרך יכול לקרוא אותו! נסה שוב.', 'With HTTP the data travels **in the open**, and anyone along the way can read it! Try again.')); } }, icon('mail', 16), ' HTTP'),
+          h('button', { class: 'btn small', onclick: () => { routing = true; sound('good'); mount(secureBox, h('div', { class: 'feedback good' }, L('מעולה! החבילה מוצפנת. עכשיו נתב אותה.', 'Great! The packet is encrypted. Now route it.'))); paint(); mount(fb); } }, icon('lock', 16), ' HTTPS'))));
     }
     mount(root, ...top, secureBox, wrap, fb);
     paint();

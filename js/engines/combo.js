@@ -1,6 +1,8 @@
 // Runs several engines in a row; score = average.
 import { h, mount, sound } from '../ui.js';
 import { ENGINES } from './index.js';
+import { L } from '../i18n.js';
+import { icon } from '../icons.js';
 
 export function run(root, cfg, done) {
   const scores = [];
@@ -20,9 +22,9 @@ export function run(root, cfg, done) {
       i++;
       if (i < cfg.parts.length) {
         sound('win');
-        mount(root, h('div', { class: 'card center fade-in' }, h('div', { class: 'big-emoji' }, '✅'),
-          h('h3', {}, `${p.title}: הושלם!`),
-          h('button', { class: 'btn', onclick: part }, 'לשלב הבא ←')));
+        mount(root, h('div', { class: 'card center fade-in' }, h('div', { class: 'big-emoji' }, icon('circle-check', 56)),
+          h('h3', {}, L(`${p.title}: הושלם!`, `${p.title}: complete!`)),
+          h('button', { class: 'btn', onclick: part }, L('לשלב הבא ←', 'Next stage →'))));
       } else part();
     });
   }

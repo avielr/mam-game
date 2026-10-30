@@ -1,25 +1,28 @@
 // Git time machine: pick the right git command at each step and watch the history graph grow.
 import { h, mount, rich, sound, shake, svgEl } from '../ui.js';
+import { L } from '../i18n.js';
+import { icon } from '../icons.js';
 
 const HASHES = ['a1f3', 'b7c2', 'c9e0', 'd4b8', 'e2a6', 'f8d1', '0c5e', '9b3f'];
+const MERGE = () => L('מיזוג', 'Merge');
 
 export function run(root, cfg, done) {
   let li = 0, mistakes = 0, total = 0;
 
   function level() {
     if (li >= cfg.levels.length) return done(Math.max(0, total / (total + mistakes * 0.5)));
-    const L = cfg.levels[li];
+    const lv = cfg.levels[li];
     // Repo state
     const commits = [];          // { id, msg, branch, file, parent }
     const tips = { main: null };  // branch -> commit index
-    let head = 'main', viewing = null, file = L.file.slice(), dirty = false, staged = false, showLog = false;
+    let head = 'main', viewing = null, file = lv.file.slice(), dirty = false, staged = false, showLog = false;
     const commit = msg => {
       const parent = tips[head];
       commits.push({ id: HASHES[commits.length % HASHES.length], msg, branch: head, file: file.slice(), parent });
       tips[head] = commits.length - 1;
       dirty = staged = false;
     };
-    (L.history || []).forEach(c => { file = c.file.slice(); commit(c.msg); });
+    (lv.history || []).forEach(c => { file = c.file.slice(); commit(c.msg); });
 
     const apply = op => {
       if (!op) return;
@@ -35,7 +38,7 @@ export function run(root, cfg, done) {
       if (op.merge) {
         const other = commits[tips[op.merge]].file;
         file = [...new Set([...file, ...other])];
-        commit(`מיזוג ${op.merge}`);
+        commit(`${MERGE()} ${op.merge}`);
       }
     };
 
@@ -58,7 +61,7 @@ export function run(root, cfg, done) {
           const p = commits[c.parent];
           s += `<line x1="${xOf(c.parent)}" y1="${laneY(p.branch)}" x2="${xOf(i)}" y2="${laneY(c.branch)}" stroke="#2a4180" stroke-width="4"/>`;
         }
-        if (c.msg.startsWith('מיזוג')) {
+        if (c.msg.startsWith(MERGE())) {
           const from = Object.keys(tips).find(b => b !== c.branch && c.msg.includes(b));
           if (from) s += `<line x1="${xOf(tips[from])}" y1="${laneY(from)}" x2="${xOf(i)}" y2="${laneY(c.branch)}" stroke="#b48cff" stroke-width="3" stroke-dasharray="5 4"/>`;
         }
@@ -70,18 +73,18 @@ export function run(root, cfg, done) {
       });
       s += '</svg>';
       mount(graphBox, svgEl(s), h('div', { class: 'muted', style: { fontSize: '13px', textAlign: 'center' } },
-        '🟠 = איפה אתה עכשיו: ', h('bdi', { class: 'mono' }, `HEAD → ${viewing ? viewing.id : head}`)));
-      fileBox.textContent = `# game.py ${dirty ? '(שונה, לא נשמר ✏️)' : ''}${staged ? ' [מוכן לשמירה 📥]' : ''}\n` + file.join('\n');
+        h('span', { style: { color: '#ffb547' } }, '●'), L(' = איפה אתה עכשיו: ', ' = where you are now: '), h('bdi', { class: 'mono' }, `HEAD → ${viewing ? viewing.id : head}`)));
+      fileBox.textContent = `# game.py ${dirty ? L('(שונה, לא נשמר)', '(modified, not saved)') : ''}${staged ? L(' [מוכן לשמירה]', ' [staged]') : ''}\n` + file.join('\n');
       mount(logBox, showLog ? h('pre', { class: 'console ltr' }, commits.slice().reverse().map(c => `${c.id}  ${c.msg}`).join('\n')) : null);
     };
 
     const stepUI = () => {
-      if (si >= L.steps.length) {
+      if (si >= lv.steps.length) {
         sound('win');
-        return mount(stepBox, h('div', { class: 'feedback good' }, h('b', {}, '🏁 '), rich(L.explain),
-          h('div', { class: 'row end', style: { marginTop: '10px' } }, h('button', { class: 'btn small', onclick: () => { li++; level(); } }, 'הבא ←'))));
+        return mount(stepBox, h('div', { class: 'feedback good' }, h('b', {}, icon('flag', 16), ' '), rich(lv.explain),
+          h('div', { class: 'row end', style: { marginTop: '10px' } }, h('button', { class: 'btn small', onclick: () => { li++; level(); } }, L('הבא ←', 'Next →')))));
       }
-      const S = L.steps[si];
+      const S = lv.steps[si];
       apply(S.before); paintRepo();
       total++;
       const opts = h('div', { class: 'options' }, S.options.map((o, idx) => h('button', { class: 'opt ltr mono', onclick: () => {
@@ -90,15 +93,15 @@ export function run(root, cfg, done) {
           si++; stepUI();
         } else {
           mistakes++; sound('bad'); shake(opts.children[idx]);
-          mount(fb, h('div', { class: 'feedback bad' }, rich(S.wrong?.[idx] || 'הפקודה הזו לא עושה את מה שצריך כאן. נסה אחרת.')));
+          mount(fb, h('div', { class: 'feedback bad' }, rich(S.wrong?.[idx] || L('הפקודה הזו לא עושה את מה שצריך כאן. נסה אחרת.', "That command doesn't do what's needed here. Try another one."))));
         }
       } }, '$ ' + o)));
-      mount(stepBox, h('div', { class: 'mission-box' }, h('b', {}, `👉 צעד ${si + 1}/${L.steps.length}: `), rich(S.say)), opts);
+      mount(stepBox, h('div', { class: 'mission-box' }, h('b', {}, L(`צעד ${si + 1}/${lv.steps.length}: `, `Step ${si + 1}/${lv.steps.length}: `)), rich(S.say)), opts);
     };
 
     mount(root,
-      h('div', { class: 'row', style: { marginBottom: '6px' } }, h('span', { class: 'chip' }, '⏳ Git'), h('span', { class: 'spacer' }), h('span', { class: 'muted' }, `שלב ${li + 1}/${cfg.levels.length}`)),
-      h('div', { class: 'mission-box' }, rich(L.intro)),
+      h('div', { class: 'row', style: { marginBottom: '6px' } }, h('span', { class: 'chip' }, icon('history', 14), ' Git'), h('span', { class: 'spacer' }), h('span', { class: 'muted' }, L(`שלב ${li + 1}/${cfg.levels.length}`, `Level ${li + 1}/${cfg.levels.length}`))),
+      h('div', { class: 'mission-box' }, rich(lv.intro)),
       graphBox, fileBox, logBox, stepBox, fb);
     stepUI();
   }

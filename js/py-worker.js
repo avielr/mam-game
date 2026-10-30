@@ -5,8 +5,23 @@ importScripts(PYODIDE + 'pyodide.js');
 // Helpers available to kids' code: a pretend AI "API" with canned answers.
 const PRELUDE = `
 import random as _r
+def _ask_ai_en(q):
+    q = q.lower()
+    if 'joke' in q:
+        return _r.choice(['Why did the computer go to the doctor? It had a virus! 🤒', 'What did one bit say to the other? See you in a byte! 😄'])
+    if 'poem' in q or 'song' in q:
+        return 'Code and more code, a loop goes round, one bug is gone, the program is sound 🎵'
+    if 'translate' in q:
+        return 'Hello = שלום'
+    if 'how many' in q and 'legs' in q:
+        return 'A spider has 8 legs 🕷️'
+    if 'capital' in q:
+        return 'Jerusalem is the capital of Israel'
+    return "I'm a pretend AI. Try asking for a joke, a poem, a translation or a capital 🙂"
 def ask_ai(question):
     q = str(question)
+    if not any('\\u0590' <= c <= '\\u05ff' for c in q):
+        return _ask_ai_en(q)
     if 'בדיחה' in q or 'joke' in q.lower():
         return _r.choice(['למה המחשב הלך לרופא? כי היה לו וירוס! 🤒', 'מה אומר ביט לביט? נתראה בבייט! 😄'])
     if 'שיר' in q:

@@ -1,4 +1,5 @@
 import { getState } from './state.js';
+import { applyLang } from './i18n.js';
 import { render as mapPage } from './pages/map.js';
 import { render as missionPage } from './pages/mission.js';
 import { render as welcomePage } from './pages/welcome.js';
@@ -8,6 +9,7 @@ import { render as parentPage } from './pages/parent.js';
 const app = document.getElementById('app');
 
 function route() {
+  applyLang();
   const [, page, arg] = (location.hash || '#/').slice(1).split('/');
   if (!getState().agentName && page !== 'welcome' && page !== 'parent') { location.hash = '#/welcome'; return; }
   window.scrollTo(0, 0);
