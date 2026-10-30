@@ -1,0 +1,18 @@
+{
+  "name": "סוכן ממר״ם",
+  "short_name": "סוכן ממר״ם",
+  "description": "מסע משימות בסייבר, בינה מלאכותית ותכנות",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1530",
+  "theme_color": "#0b1530",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
